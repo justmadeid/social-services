@@ -298,14 +298,17 @@ class TwitterScraper:
                                     legacy = fr['content']['itemContent']['user_results']['result']
                                     users.append({
                                         "id": legacy['rest_id'],
-                                        "name": legacy.get('legacy', {}).get('name', ''),
-                                        "username": legacy.get('legacy', {}).get('screen_name', ''),
+                                        "name": legacy.get('core', {}).get('name', ''),
+                                        "username": legacy.get('core', {}).get('screen_name', ''),
+                                        "bio"  : legacy.get('legacy', {}).get('description', ''),
                                         "followers": legacy.get('legacy', {}).get('followers_count', 0),
                                         "following": legacy.get('legacy', {}).get('friends_count', 0),
-                                        "url": '',
+                                        "url": legacy.get('legacy', {}).get('url', ''),
                                         "tweets": legacy.get('legacy', {}).get('statuses_count', 0),
-                                        "profile_image_url_https": legacy.get('legacy', {}).get('profile_image_url_https', ''),
-                                        "created": legacy.get('legacy', {}).get('created_at', ''),
+                                        "profile_image_url_https": legacy.get('avatar', {}).get('image_url', ''),
+                                        "created": legacy.get('core', {}).get('created_at', ''),
+                                        "blue_verified": legacy.get('is_blue_verified', False),
+                                        "location": legacy.get('location', {}).get('location', ''),
                                     })
                                 except (KeyError, TypeError):
                                     continue
@@ -391,14 +394,17 @@ class TwitterScraper:
                                     legacy = fr['content']['itemContent']['user_results']['result']
                                     users.append({
                                         "id": legacy['rest_id'],
-                                        "name": legacy.get('legacy', {}).get('name', ''),
-                                        "username": legacy.get('legacy', {}).get('screen_name', ''),
+                                        "name": legacy.get('core', {}).get('name', ''),
+                                        "username": legacy.get('core', {}).get('screen_name', ''),
+                                        "bio"  : legacy.get('legacy', {}).get('description', ''),
                                         "followers": legacy.get('legacy', {}).get('followers_count', 0),
                                         "following": legacy.get('legacy', {}).get('friends_count', 0),
-                                        "url": '',
+                                        "url": legacy.get('legacy', {}).get('url', ''),
                                         "tweets": legacy.get('legacy', {}).get('statuses_count', 0),
-                                        "profile_image_url_https": legacy.get('legacy', {}).get('profile_image_url_https', ''),
-                                        "created": legacy.get('legacy', {}).get('created_at', ''),
+                                        "profile_image_url_https": legacy.get('avatar', {}).get('image_url', ''),
+                                        "created": legacy.get('core', {}).get('created_at', ''),
+                                        "blue_verified": legacy.get('is_blue_verified', False),
+                                        "location": legacy.get('location', {}).get('location', ''),
                                     })
                                 except (KeyError, TypeError):
                                     continue

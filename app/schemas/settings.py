@@ -16,6 +16,7 @@ class SettingsUpdate(BaseModel):
 
 
 class SettingsResponse(BaseModel):
+    id: int
     credential_name: str
     username: str
     is_active: bool

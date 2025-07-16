@@ -74,25 +74,58 @@ async def get_settings(
         )
 
 
+@router.get(
+    "/{id}",
+    response_model=StandardResponse[SettingsResponse],
+    summary="Get specific Twitter credentials",
+    description="Get specific Twitter credentials by ID (password excluded)"
+)
+async def get_settings_by_id(
+    id: int,
+    db: AsyncSession = Depends(get_async_session),
+    _: None = Depends(rate_limit)
+):
+    """Get specific credentials by ID without password."""
+    try:
+        settings_obj = await settings_crud.get(db, id=id)
+        if not settings_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Credential with id '{id}' not found"
+            )
+        
+        return StandardResponse(
+            status="success",
+            data=SettingsResponse.model_validate(settings_obj)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve credentials: {str(e)}"
+        )
+
+
 @router.put(
-    "/{credential_name}",
+    "/{id}",
     response_model=StandardResponse[SettingsResponse],
     summary="Update Twitter credentials",
     description="Update existing Twitter credentials"
 )
 async def update_settings(
-    credential_name: str,
+    id: int,
     settings_update: SettingsUpdate,
     db: AsyncSession = Depends(get_async_session),
     _: None = Depends(rate_limit)
 ):
     """Update existing credentials."""
     try:
-        settings_obj = await settings_crud.get_by_name(db, credential_name=credential_name)
+        settings_obj = await settings_crud.get(db, id=id)
         if not settings_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Credential '{credential_name}' not found"
+                detail=f"Credential with id '{id}' not found"
             )
         
         updated_settings = await settings_crud.update_with_encryption(db, db_obj=settings_obj, obj_in=settings_update)
@@ -112,31 +145,32 @@ async def update_settings(
 
 
 @router.delete(
-    "/{credential_name}",
+    "/{id}",
     response_model=StandardResponse[dict],
     summary="Delete Twitter credentials",
-    description="Delete Twitter credentials by credential name"
+    description="Delete Twitter credentials by id"
 )
 async def delete_settings(
-    credential_name: str,
+    id: int,
     db: AsyncSession = Depends(get_async_session),
     _: None = Depends(rate_limit)
 ):
     """Delete credentials."""
     try:
-        settings_obj = await settings_crud.get_by_name(db, credential_name=credential_name)
+        settings_obj = await settings_crud.get(db, id=id)
         if not settings_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Credential '{credential_name}' not found"
+                detail=f"Credential with id '{id}' not found"
             )
         
-        await settings_crud.remove(db, id=settings_obj.id)
+        credential_name = settings_obj.credential_name
+        await settings_crud.remove(db, id=id)
         
         return StandardResponse(
             status="success",
             message=f"Credential '{credential_name}' deleted successfully",
-            data={"credential_name": credential_name}
+            data={"id": id, "credential_name": credential_name}
         )
     except HTTPException:
         raise

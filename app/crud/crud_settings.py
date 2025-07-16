@@ -97,6 +97,28 @@ class CRUDCredentials(CRUDBase[TwitterCredentials, CredentialCreate, CredentialU
         await db.refresh(credential)
         return credential
 
+    async def update_login_attempt_by_id(
+        self, 
+        db: AsyncSession, 
+        *, 
+        credential_id: int, 
+        success: bool = True
+    ) -> Optional[TwitterCredentials]:
+        credential = await self.get(db, id=credential_id)
+        if not credential:
+            return None
+        
+        credential.last_login_attempt = datetime.utcnow()
+        if success:
+            credential.login_success_count += 1
+        else:
+            credential.login_failure_count += 1
+        
+        db.add(credential)
+        await db.commit()
+        await db.refresh(credential)
+        return credential
+
     async def get_active_credentials(
         self, db: AsyncSession
     ) -> List[TwitterCredentials]:

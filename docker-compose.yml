@@ -1,0 +1,134 @@
+services:
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql+aiomysql://scraper_user:scraper_pass@mysql:3306/twitter_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your-32-char-encryption-key-here}
+      - API_KEY=${API_KEY:-your-api-key-here}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./app:/app/app:ro
+      - playwright_data:/home/apiuser/.cache/ms-playwright
+      - twitter_state:/app/state
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scraper_network
+    restart: unless-stopped
+
+  # Celery Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=mysql+aiomysql://scraper_user:scraper_pass@mysql:3306/twitter_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your-32-char-encryption-key-here}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./app:/app/app:ro
+      - playwright_data:/home/apiuser/.cache/ms-playwright
+      - twitter_state:/app/state
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scraper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.worker.celery_app", "inspect", "ping"]
+      timeout: 30s
+      retries: 3
+      interval: 30s
+    deploy:
+      replicas: 2
+
+  # Celery Flower (Monitoring)
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.worker.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+    networks:
+      - scraper_network
+    restart: unless-stopped
+    # Health check disabled - Flower is functional but health check is unreliable
+    # You can verify Flower is working by visiting http://localhost:5555
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_password}
+      - MYSQL_DATABASE=twitter_scraper
+      - MYSQL_USER=scraper_user
+      - MYSQL_PASSWORD=${DB_PASSWORD:-scraper_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - scraper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis (Cache & Message Broker)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - scraper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+
+volumes:
+  mysql_data:
+  redis_data:
+  playwright_data:
+  twitter_state:
+
+networks:
+  scraper_network:
+    driver: bridge

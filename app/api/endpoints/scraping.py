@@ -4,13 +4,14 @@ from typing import Optional
 from app.api.dependencies import rate_limit
 from app.schemas.task import TaskResponse
 from app.schemas.common import StandardResponse
+from app.schemas.twitter import SearchUsersRequest
 from app.worker.tasks import search_users_task, get_following_task, get_followers_task, get_timeline_task
 from app.core.config import settings
 
 router = APIRouter()
 
 
-@router.get(
+@router.post(
     "/search/users",
     response_model=StandardResponse[TaskResponse],
     status_code=status.HTTP_202_ACCEPTED,
@@ -18,14 +19,13 @@ router = APIRouter()
     description="Search for Twitter users based on query string"
 )
 async def search_users(
-    q: str = Query(..., description="Search query string"),
-    limit: Optional[int] = Query(20, ge=1, le=100, description="Number of results to return"),
+    search_request: SearchUsersRequest,
     _: None = Depends(rate_limit)
 ):
     """Search for Twitter users."""
     try:
         # Queue search task
-        task = search_users_task.delay(q, limit)
+        task = search_users_task.delay(search_request.name, search_request.limit)
         
         return StandardResponse(
             status="accepted",
@@ -34,7 +34,7 @@ async def search_users(
                 task_id=task.id,
                 status="PENDING",
                 status_url=f"/api/v1/tasks/{task.id}",
-                parameters={"query": q, "limit": limit}
+                parameters={"query": search_request.name, "limit": search_request.limit}
             )
         )
         

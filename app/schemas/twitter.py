@@ -100,3 +100,8 @@ class TimelineRequest(BaseModel):
     username: str = Field(..., min_length=1, description="Twitter username")
     count: int = Field(80, ge=20, le=100, description="Number of tweets to analyze")
     include_analysis: bool = Field(True, description="Include hashtag/mention analysis")
+
+
+class SearchUsersRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Search query string")
+    limit: Optional[int] = Field(20, ge=1, le=100, description="Number of results to return")

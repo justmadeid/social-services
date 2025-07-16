@@ -109,7 +109,12 @@ curl -X POST "http://localhost:8000/api/v1/login" \
 ### Search Users
 
 ```bash
-curl -X GET "http://localhost:8000/api/v1/search/users?q=python&limit=10" \
+curl -X POST "http://localhost:8000/api/v1/search/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "elon",
+    "limit": 10
+  }'
 ```
 
 ### Get User Timeline
@@ -132,7 +137,7 @@ curl -X GET "http://localhost:8000/api/v1/tasks/{task_id}" \
 | GET | `/api/v1/settings` | List saved credentials |
 | POST | `/api/v1/login` | Login to Twitter |
 | GET | `/api/v1/tasks/{task_id}` | Get task status |
-| GET | `/api/v1/search/users` | Search Twitter users |
+| POST | `/api/v1/search/users` | Search Twitter users |
 | GET | `/api/v1/users/{username}/following` | Get following list |
 | GET | `/api/v1/users/{username}/followers` | Get followers list |
 | GET | `/api/v1/users/{username}/timeline` | Get timeline with analysis |

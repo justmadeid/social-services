@@ -44,6 +44,12 @@ def update_task_progress(progress: int, message: str = None):
 def login_task(self, credential_name: str):
     """Background task for Twitter login."""
     try:
+        # Immediately set status to STARTED when task begins
+        self.update_state(
+            state='STARTED',
+            meta={'progress': 0, 'message': 'Task started, retrieving credentials...'}
+        )
+        
         update_task_progress(10, "Retrieving credentials")
         
         # Get credentials (we need to handle async in sync context)
@@ -85,6 +91,12 @@ def login_task(self, credential_name: str):
 def search_users_task(self, query: str, limit: int = 20):
     """Background task for searching Twitter users."""
     try:
+        # Immediately set status to STARTED when task begins
+        self.update_state(
+            state='STARTED',
+            meta={'progress': 0, 'message': 'Task started, initializing...'}
+        )
+        
         update_task_progress(10, "Initializing scraper")
         
         # Create scraper instance (assumes login state exists)
@@ -116,6 +128,12 @@ def search_users_task(self, query: str, limit: int = 20):
 def get_following_task(self, username: str, limit: int = 20):
     """Background task for getting user's following list."""
     try:
+        # Immediately set status to STARTED when task begins
+        self.update_state(
+            state='STARTED',
+            meta={'progress': 0, 'message': 'Task started, initializing...'}
+        )
+        
         update_task_progress(10, "Initializing scraper")
         
         # Create scraper instance
@@ -147,6 +165,12 @@ def get_following_task(self, username: str, limit: int = 20):
 def get_followers_task(self, username: str, limit: int = 20):
     """Background task for getting user's followers list."""
     try:
+        # Immediately set status to STARTED when task begins
+        self.update_state(
+            state='STARTED',
+            meta={'progress': 0, 'message': 'Task started, initializing...'}
+        )
+        
         update_task_progress(10, "Initializing scraper")
         
         # Create scraper instance
@@ -178,6 +202,12 @@ def get_followers_task(self, username: str, limit: int = 20):
 def get_timeline_task(self, username: str, count: int = 80, include_analysis: bool = True):
     """Background task for getting user's timeline with analysis."""
     try:
+        # Immediately set status to STARTED when task begins
+        self.update_state(
+            state='STARTED',
+            meta={'progress': 0, 'message': 'Task started, initializing...'}
+        )
+        
         update_task_progress(10, "Initializing scraper")
         
         # Create scraper instance

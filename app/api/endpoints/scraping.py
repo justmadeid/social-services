@@ -1,14 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional
+import time
+import asyncio
+from celery.result import AsyncResult
 
 from app.api.dependencies import rate_limit
 from app.schemas.task import TaskResponse
 from app.schemas.common import StandardResponse
 from app.schemas.twitter import SearchUsersRequest
 from app.worker.tasks import search_users_task, get_following_task, get_followers_task, get_timeline_task
+from app.worker.celery_app import celery_app
 from app.core.config import settings
 
 router = APIRouter()
+
+
+async def get_task_status_with_retry(task_id: str, max_retries: int = 3, delay: float = 0.1):
+    """Get task status with retry to catch status changes."""
+    for attempt in range(max_retries):
+        task_result = AsyncResult(task_id, app=celery_app)
+        if task_result.status != "PENDING":
+            return task_result.status
+        if attempt < max_retries - 1:
+            await asyncio.sleep(delay)
+    return "PENDING"
 
 
 @router.post(
@@ -27,12 +42,15 @@ async def search_users(
         # Queue search task
         task = search_users_task.delay(search_request.name, search_request.limit)
         
+        # Wait briefly and check for status change
+        task_status = await get_task_status_with_retry(task.id)
+        
         return StandardResponse(
             status="accepted",
             message="User search task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
-                status="PENDING",
+                status=task_status,
                 status_url=f"/api/v1/tasks/{task.id}",
                 parameters={"query": search_request.name, "limit": search_request.limit}
             )
@@ -67,7 +85,7 @@ async def get_user_following(
             message="Following list task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
-                status="PENDING",
+                status=task.status,
                 status_url=f"/api/v1/tasks/{task.id}",
                 parameters={"username": username, "limit": limit}
             )
@@ -102,7 +120,7 @@ async def get_user_followers(
             message="Followers list task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
-                status="PENDING",
+                status=task.status,
                 status_url=f"/api/v1/tasks/{task.id}",
                 parameters={"username": username, "limit": limit}
             )
@@ -143,7 +161,7 @@ async def get_user_timeline(
             message="Timeline analysis task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
-                status="PENDING",
+                status=task.status,
                 status_url=f"/api/v1/tasks/{task.id}",
                 parameters={
                     "username": username,

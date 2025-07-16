@@ -15,7 +15,7 @@ class TaskStatus(str, Enum):
 
 class TaskResponse(BaseModel):
     task_id: str
-    status: str = "PENDING"
+    status: str
     status_url: Optional[str] = None
     parameters: Optional[Dict[str, Any]] = None
 

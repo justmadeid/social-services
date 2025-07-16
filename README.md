@@ -84,18 +84,10 @@ celery -A app.worker.celery_app flower
 
 ## API Usage
 
-### Authentication
-
-All API endpoints require an API key in the header:
-```bash
-X-API-Key: your-api-key-here
-```
-
 ### Save Twitter Credentials
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/settings" \
-  -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "credential_name": "my_account",
@@ -108,7 +100,6 @@ curl -X POST "http://localhost:8000/api/v1/settings" \
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/login" \
-  -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "credential_name": "my_account"
@@ -119,21 +110,18 @@ curl -X POST "http://localhost:8000/api/v1/login" \
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/search/users?q=python&limit=10" \
-  -H "X-API-Key: your-api-key-here"
 ```
 
 ### Get User Timeline
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/users/elonmusk/timeline?count=50" \
-  -H "X-API-Key: your-api-key-here"
 ```
 
 ### Check Task Status
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/tasks/{task_id}" \
-  -H "X-API-Key: your-api-key-here"
 ```
 
 ## API Endpoints

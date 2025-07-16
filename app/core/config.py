@@ -43,9 +43,8 @@ class Settings(BaseSettings):
     min_tweet_count: int = 20
     max_tweet_count: int = 100
     scraping_timeout: int = 300  # 5 minutes
-    
-    # API settings
-    api_v1_str: str = "/api/v1"
+      # API settings
+    api_v1_str: str = "/api/v1/twitter"
     project_name: str = "Twitter Scraper API"
     project_version: str = "1.0.0"
     

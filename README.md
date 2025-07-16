@@ -87,7 +87,7 @@ celery -A app.worker.celery_app flower
 ### Save Twitter Credentials
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/settings" \
+curl -X POST "http://localhost:8000/api/v1/twitter/settings" \
   -H "Content-Type: application/json" \
   -d '{
     "credential_name": "my_account",
@@ -99,7 +99,7 @@ curl -X POST "http://localhost:8000/api/v1/settings" \
 ### Login to Twitter
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/login" \
+curl -X POST "http://localhost:8000/api/v1/twitter/login" \
   -H "Content-Type: application/json" \
   -d '{
     "credential_name": "my_account"
@@ -109,7 +109,7 @@ curl -X POST "http://localhost:8000/api/v1/login" \
 ### Search Users
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/search/users" \
+curl -X POST "http://localhost:8000/api/v1/twitter/search/users" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "elon",
@@ -120,27 +120,27 @@ curl -X POST "http://localhost:8000/api/v1/search/users" \
 ### Get User Timeline
 
 ```bash
-curl -X GET "http://localhost:8000/api/v1/users/elonmusk/timeline?count=50" \
+curl -X GET "http://localhost:8000/api/v1/twitter/users/elonmusk/timeline?count=50" \
 ```
 
 ### Check Task Status
 
 ```bash
-curl -X GET "http://localhost:8000/api/v1/tasks/{task_id}" \
+curl -X GET "http://localhost:8000/api/v1/twitter/tasks/{task_id}" \
 ```
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/settings` | Save Twitter credentials |
-| GET | `/api/v1/settings` | List saved credentials |
-| POST | `/api/v1/login` | Login to Twitter |
-| GET | `/api/v1/tasks/{task_id}` | Get task status |
-| POST | `/api/v1/search/users` | Search Twitter users |
-| GET | `/api/v1/users/{username}/following` | Get following list |
-| GET | `/api/v1/users/{username}/followers` | Get followers list |
-| GET | `/api/v1/users/{username}/timeline` | Get timeline with analysis |
+| POST | `/api/v1/twitter/settings` | Save Twitter credentials |
+| GET | `/api/v1/twitter/settings` | List saved credentials |
+| POST | `/api/v1/twitter/login` | Login to Twitter |
+| GET | `/api/v1/twitter/tasks/{task_id}` | Get task status |
+| POST | `/api/v1/twitter/search/users` | Search Twitter users |
+| GET | `/api/v1/twitter/users/{username}/following` | Get following list |
+| GET | `/api/v1/twitter/users/{username}/followers` | Get followers list |
+| GET | `/api/v1/twitter/users/{username}/timeline` | Get timeline with analysis |
 
 ## Workflow
 

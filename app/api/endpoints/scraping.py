@@ -38,20 +38,18 @@ async def search_users(
     _: None = Depends(rate_limit)
 ):
     """Search for Twitter users."""
-    try:
-        # Queue search task
+    try:        # Queue search task
         task = search_users_task.delay(search_request.name, search_request.limit)
         
         # Wait briefly and check for status change
         task_status = await get_task_status_with_retry(task.id)
-        
         return StandardResponse(
             status="accepted",
             message="User search task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task_status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={"query": search_request.name, "limit": search_request.limit}
             )
         )
@@ -76,17 +74,15 @@ async def get_user_following(
     _: None = Depends(rate_limit)
 ):
     """Get user's following list."""
-    try:
-        # Queue following task
+    try:        # Queue following task
         task = get_following_task.delay(username, limit)
-        
         return StandardResponse(
             status="accepted",
             message="Following list task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={"username": username, "limit": limit}
             )
         )
@@ -111,17 +107,15 @@ async def get_user_followers(
     _: None = Depends(rate_limit)
 ):
     """Get user's followers list."""
-    try:
-        # Queue followers task
+    try:        # Queue followers task
         task = get_followers_task.delay(username, limit)
-        
         return StandardResponse(
             status="accepted",
             message="Followers list task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={"username": username, "limit": limit}
             )
         )
@@ -148,21 +142,19 @@ async def get_user_timeline(
         le=settings.max_tweet_count,
         description="Number of tweets to analyze"
     ),
-    include_analysis: Optional[bool] = Query(True, description="Include hashtag and mention analysis"),
-    _: None = Depends(rate_limit)
+    include_analysis: Optional[bool] = Query(True, description="Include hashtag and mention analysis"),    _: None = Depends(rate_limit)
 ):
     """Get user's timeline with analysis."""
     try:
         # Queue timeline task
         task = get_timeline_task.delay(username, count, include_analysis)
-        
         return StandardResponse(
             status="accepted",
             message="Timeline analysis task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={
                     "username": username,
                     "count": count,

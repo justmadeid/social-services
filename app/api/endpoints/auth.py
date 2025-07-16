@@ -8,6 +8,7 @@ from app.schemas.task import TaskResponse
 from app.schemas.common import StandardResponse
 from app.worker.tasks import login_task
 from app.schemas.settings import LoginRequest
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -37,18 +38,18 @@ async def login(
         if not credentials.is_active:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Credential '{login_request.credential_name}' is not active"
+        detail=f"Credential '{login_request.credential_name}' is not active"
             )
-          # Queue login task
-        task = login_task.delay(login_request.credential_name)
         
+        # Queue login task
+        task = login_task.delay(login_request.credential_name)
         return StandardResponse(
             status="accepted",
             message="Login task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}"
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}"
             )
         )
         
@@ -75,16 +76,16 @@ async def test_task(
     """Trigger a simple test task."""
     try:
         from app.worker.tasks import test_task as test_task_func
-          # Queue test task
-        task = test_task_func.delay(message)
         
+        # Queue test task
+        task = test_task_func.delay(message)
         return StandardResponse(
             status="accepted",
             message="Test task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={"message": message}
             )
         )
@@ -110,16 +111,16 @@ async def test_failure_task(
     """Trigger a test task that will fail."""
     try:
         from app.worker.tasks import test_failure_task as test_failure_task_func
-          # Queue failure test task
-        task = test_failure_task_func.delay(message)
         
+        # Queue failure test task
+        task = test_failure_task_func.delay(message)
         return StandardResponse(
             status="accepted",
             message="Test failure task queued successfully",
             data=TaskResponse(
                 task_id=task.id,
                 status=task.status,
-                status_url=f"/api/v1/tasks/{task.id}",
+                status_url=f"{settings.api_v1_str}/tasks/{task.id}",
                 parameters={"message": message}
             )
         )

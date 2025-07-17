@@ -23,8 +23,7 @@ class TwitterScraper:
         self.username = username
         self.password = password
         self.browser = None
-        
-        # Set state file path - use a persistent location
+          # Set state file path - use a persistent location
         self._set_state_file_path()
 
     def _set_state_file_path(self):
@@ -60,9 +59,57 @@ class TwitterScraper:
         if not path.exists(self.state_file):
             print(f"State file not found at: {self.state_file}")
             if not self.username or not self.password:
-                raise ScrapingException("No login state found and no credentials provided")
-            print("Attempting to login...")
-            self.login()
+                # Try to get active credentials from database as fallback
+                print("No credentials provided, attempting to fetch from database...")
+                try:
+                    import asyncio
+                    from app.db.session import AsyncSessionLocal
+                    from app.crud.crud_settings import settings_crud
+                    from app.core.security import security_manager
+                    
+                    async def get_fallback_credentials():
+                        async with AsyncSessionLocal() as db:
+                            active_credentials = await settings_crud.get_active_credentials(db)
+                            if active_credentials:
+                                # Use the first active credential
+                                credential = active_credentials[0]
+                                password = security_manager.decrypt_password(
+                                    credential.encrypted_password, 
+                                    credential.salt
+                                )
+                                return credential.username, password
+                            return None, None                    # Run async code in a separate thread to avoid event loop conflict
+                    import concurrent.futures
+                    import threading
+                    
+                    def run_async_in_thread():
+                        # Create a new event loop for this thread
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        try:
+                            return loop.run_until_complete(get_fallback_credentials())
+                        finally:
+                            loop.close()
+                    
+                    # Run the async function in a separate thread
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(run_async_in_thread)
+                        username, password = future.result()
+                    
+                    if username and password:
+                        print(f"Using fallback credentials for user: {username}")
+                        self.username = username
+                        self.password = password
+                        print("Attempting to login with fallback credentials...")
+                        self.login()
+                    else:
+                        raise ScrapingException("No login state found, no credentials provided, and no active credentials in database")
+                except Exception as e:
+                    print(f"Failed to fetch fallback credentials: {e}")
+                    raise ScrapingException("No login state found and no credentials provided")
+            else:
+                print("Attempting to login...")
+                self.login()
         else:
             print(f"State file found at: {self.state_file}")
             # Verify the state file is valid
@@ -71,12 +118,116 @@ class TwitterScraper:
                     state_data = json.load(f)
                     if not state_data.get('cookies'):
                         print("State file exists but contains no cookies, re-login required")
-                        self.login()
+                        if not self.username or not self.password:
+                            # Try to get active credentials from database as fallback
+                            print("No credentials provided, attempting to fetch from database...")
+                            try:
+                                import asyncio
+                                from app.db.session import AsyncSessionLocal
+                                from app.crud.crud_settings import settings_crud
+                                from app.core.security import security_manager
+                                
+                                async def get_fallback_credentials():
+                                    async with AsyncSessionLocal() as db:
+                                        active_credentials = await settings_crud.get_active_credentials(db)
+                                        if active_credentials:
+                                            # Use the first active credential
+                                            credential = active_credentials[0]
+                                            password = security_manager.decrypt_password(
+                                                credential.encrypted_password, 
+                                                credential.salt
+                                            )
+                                            return credential.username, password
+                                        return None, None
+                                
+                                # Run async code in a separate thread to avoid event loop conflict
+                                import concurrent.futures
+                                import threading
+                                
+                                def run_async_in_thread():
+                                    # Create a new event loop for this thread
+                                    loop = asyncio.new_event_loop()
+                                    asyncio.set_event_loop(loop)
+                                    try:
+                                        return loop.run_until_complete(get_fallback_credentials())
+                                    finally:
+                                        loop.close()
+                                
+                                # Run the async function in a separate thread
+                                with concurrent.futures.ThreadPoolExecutor() as executor:
+                                    future = executor.submit(run_async_in_thread)
+                                    username, password = future.result()
+                                
+                                if username and password:
+                                    print(f"Using fallback credentials for user: {username}")
+                                    self.username = username
+                                    self.password = password
+                                    print("Attempting to login with fallback credentials...")
+                                    self.login()
+                                else:
+                                    raise ScrapingException("State file corrupted, no credentials provided, and no active credentials in database")
+                            except Exception as e:
+                                print(f"Failed to fetch fallback credentials: {e}")
+                                raise ScrapingException("State file corrupted and no credentials provided")
+                        else:
+                            self.login()
                     else:
                         print("Valid state file found, using existing session")
             except (json.JSONDecodeError, KeyError, FileNotFoundError):
                 print("State file is corrupted or unreadable, re-login required")
-                self.login()
+                if not self.username or not self.password:
+                    # Try to get active credentials from database as fallback
+                    print("No credentials provided, attempting to fetch from database...")
+                    try:
+                        import asyncio
+                        from app.db.session import AsyncSessionLocal
+                        from app.crud.crud_settings import settings_crud
+                        from app.core.security import security_manager
+                        
+                        async def get_fallback_credentials():
+                            async with AsyncSessionLocal() as db:
+                                active_credentials = await settings_crud.get_active_credentials(db)
+                                if active_credentials:
+                                    # Use the first active credential
+                                    credential = active_credentials[0]
+                                    password = security_manager.decrypt_password(
+                                        credential.encrypted_password, 
+                                        credential.salt
+                                    )
+                                    return credential.username, password
+                                return None, None
+                        
+                        # Run async code in a separate thread to avoid event loop conflict
+                        import concurrent.futures
+                        import threading
+                        
+                        def run_async_in_thread():
+                            # Create a new event loop for this thread
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            try:
+                                return loop.run_until_complete(get_fallback_credentials())
+                            finally:
+                                loop.close()
+                        
+                        # Run the async function in a separate thread
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(run_async_in_thread)
+                            username, password = future.result()
+                        
+                        if username and password:
+                            print(f"Using fallback credentials for user: {username}")
+                            self.username = username
+                            self.password = password
+                            print("Attempting to login with fallback credentials...")
+                            self.login()
+                        else:
+                            raise ScrapingException("State file corrupted, no credentials provided, and no active credentials in database")
+                    except Exception as e:
+                        print(f"Failed to fetch fallback credentials: {e}")
+                        raise ScrapingException("State file corrupted and no credentials provided")
+                else:
+                    self.login()
 
     def login(self):
         """Login to Twitter and save session state."""

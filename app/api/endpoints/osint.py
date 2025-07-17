@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional
+import asyncio
+import concurrent.futures
 
 from app.api.dependencies import rate_limit
 from app.schemas.common import StandardResponse
@@ -12,6 +14,17 @@ from app.scraper.twitter_scraper import TwitterScraper
 from app.core.config import settings
 
 router = APIRouter()
+
+
+def run_scraping_in_thread(func, *args, **kwargs):
+    """Run a scraping function in a separate thread to avoid Playwright async context issues."""
+    def run_sync():
+        scraper = TwitterScraper(headless=True)
+        return getattr(scraper, func)(*args, **kwargs)
+    
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(run_sync)
+        return future.result()
 
 
 @router.get(
@@ -28,9 +41,8 @@ async def search_users_osint(
 ):
     """Search for Twitter users with immediate results."""
     try:
-        # Create scraper instance and get direct results
-        scraper = TwitterScraper(headless=True)
-        result = scraper.search_user(name, limit)
+        # Run scraping in separate thread to avoid Playwright async context issues
+        result = run_scraping_in_thread('search_user', name, limit)
         
         return StandardResponse(
             status="success",
@@ -62,9 +74,8 @@ async def get_user_following_osint(
 ):
     """Get user's following list with immediate results."""
     try:
-        # Create scraper instance and get direct results
-        scraper = TwitterScraper(headless=True)
-        result = scraper.following_user(username, limit)
+        # Run scraping in separate thread to avoid Playwright async context issues
+        result = run_scraping_in_thread('following_user', username, limit)
         
         return StandardResponse(
             status="success",
@@ -96,9 +107,8 @@ async def get_user_followers_osint(
 ):
     """Get user's followers list with immediate results."""
     try:
-        # Create scraper instance and get direct results
-        scraper = TwitterScraper(headless=True)
-        result = scraper.followers_user(username, limit)
+        # Run scraping in separate thread to avoid Playwright async context issues
+        result = run_scraping_in_thread('followers_user', username, limit)
         
         return StandardResponse(
             status="success",
@@ -136,9 +146,8 @@ async def get_user_timeline_osint(
 ):
     """Get user's timeline with analysis and immediate results."""
     try:
-        # Create scraper instance and get direct results
-        scraper = TwitterScraper(headless=True)
-        result = scraper.timeline_tweet(username, count)
+        # Run scraping in separate thread to avoid Playwright async context issues
+        result = run_scraping_in_thread('timeline_tweet', username, count)
         
         # If analysis is not requested, remove it
         if not include_analysis:

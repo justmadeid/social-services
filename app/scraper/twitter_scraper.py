@@ -22,31 +22,39 @@ class TwitterScraper:
         self.headless = headless
         self.username = username
         self.password = password
-        self.browser = None
-          # Set state file path - use a persistent location
+        self.browser = None        # Set state file path - use a persistent location
         self._set_state_file_path()
-
+        
     def _set_state_file_path(self):
         """Set the path for the state.json file, ensuring it's in a persistent location."""
-        # Try to use a persistent directory
-        if os.path.exists('/app'):
-            # Docker environment - use app directory which should be persistent
+        # Try to use a persistent directory based on environment
+        if os.path.exists('/app/state'):
+            # Docker environment - use mounted state volume
+            state_dir = '/app/state'
+        elif os.path.exists('/app'):
+            # Docker environment - use app directory
             state_dir = '/app'
         elif os.path.exists('/tmp'):
-            # Fallback to tmp directory
+            # Linux/Mac fallback to tmp directory
             state_dir = '/tmp'
         else:
-            # Local development - use current directory
-            state_dir = os.getcwd()
+            # Local development - use project root directory
+            # Get the project root (go up from app/scraper/ to project root)
+            current_file_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(current_file_dir))
+            state_dir = project_root
         
         self.state_file = os.path.join(state_dir, "state.json")
+        print(f"State file will be saved to: {self.state_file}")
         
         # Ensure the directory exists and is writable
         try:
             os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
         except Exception as e:
+            print(f"Could not create state directory: {e}")
             # If we can't create the directory, fall back to current directory
             self.state_file = "state.json"
+            print(f"Fallback state file location: {self.state_file}")
 
     def _generate_cache_key(self, operation: str, params: Dict[str, Any]) -> str:
         """Generate cache key for operation and parameters."""
@@ -764,15 +772,13 @@ class TwitterScraper:
                         "execution_time": execution_time,
                         "cached": False
                     }
-                }
-
-                # Cache the result
+                }                # Cache the result
                 cache_manager.set(cache_key, result, ttl=settings.cache_ttl_timeline_data)
                 return result
-
+                
         except Exception as e:
             raise ScrapingException(f"Timeline retrieval failed: {str(e)}")
-
+    
     def check_login_status(self) -> Dict[str, Any]:
         """Check the current login status and state file information."""
         status = {
@@ -780,8 +786,10 @@ class TwitterScraper:
             "state_file_exists": os.path.exists(self.state_file),
             "state_file_size": 0,
             "cookies_count": 0,
+            "valid_cookies_count": 0,
             "has_credentials": bool(self.username and self.password),
-            "login_required": False
+            "login_required": False,
+            "session_valid": False
         }
         
         if status["state_file_exists"]:
@@ -791,12 +799,48 @@ class TwitterScraper:
                     state_data = json.load(f)
                     cookies = state_data.get('cookies', [])
                     status["cookies_count"] = len(cookies)
-                    status["login_required"] = len(cookies) == 0
+                    
+                    # Check for valid, non-expired cookies
+                    current_time = time.time()
+                    valid_cookies = []
+                    for cookie in cookies:
+                        # Check if cookie has expiry and is not expired
+                        if 'expires' in cookie:
+                            if cookie['expires'] == -1 or cookie['expires'] > current_time:
+                                valid_cookies.append(cookie)
+                        else:
+                            # Session cookies (no expiry) are considered valid
+                            valid_cookies.append(cookie)
+                    
+                    status["valid_cookies_count"] = len(valid_cookies)
+                    
+                    # More sophisticated login requirement check
+                    if len(cookies) == 0:
+                        status["login_required"] = True
+                        status["session_valid"] = False
+                    elif len(valid_cookies) == 0:
+                        status["login_required"] = True
+                        status["session_valid"] = False
+                        status["error"] = "All cookies are expired"
+                    else:
+                        # Check if we have Twitter authentication cookies
+                        twitter_auth_cookies = [c for c in valid_cookies 
+                                              if c.get('name') in ['auth_token', 'ct0', 'twid']]
+                        if twitter_auth_cookies:
+                            status["login_required"] = False
+                            status["session_valid"] = True
+                        else:
+                            status["login_required"] = True
+                            status["session_valid"] = False
+                            status["error"] = "No Twitter authentication cookies found"
+                            
             except (json.JSONDecodeError, FileNotFoundError, PermissionError) as e:
                 status["error"] = str(e)
                 status["login_required"] = True
+                status["session_valid"] = False
         else:
             status["login_required"] = True
+            status["session_valid"] = False
         
         return status
 

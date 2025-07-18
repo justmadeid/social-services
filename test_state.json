@@ -1,0 +1,32 @@
+{
+  "cookies": [
+    {
+      "name": "auth_token",
+      "value": "test_auth_token_value",
+      "domain": ".twitter.com",
+      "path": "/",
+      "expires": 1759267200,
+      "httpOnly": true,
+      "secure": true
+    },
+    {
+      "name": "ct0",
+      "value": "test_csrf_token",
+      "domain": ".twitter.com", 
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true
+    },
+    {
+      "name": "twid",
+      "value": "test_user_id",
+      "domain": ".twitter.com",
+      "path": "/",
+      "expires": 1759267200,
+      "httpOnly": false,
+      "secure": true
+    }
+  ],
+  "origins": []
+}

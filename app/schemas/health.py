@@ -71,7 +71,9 @@ class TwitterScraperHealthDetails(BaseModel):
     state_file_path: str
     state_file_size: int
     cookies_count: int
+    valid_cookies_count: int
     login_required: bool
+    session_valid: bool
     has_credentials: bool
     last_login_check: Optional[datetime] = None
     error: Optional[str] = None

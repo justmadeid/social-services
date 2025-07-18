@@ -61,9 +61,6 @@ RUN chown -R apiuser:apiuser /home/apiuser/.cache
 # Create state directory for session persistence
 RUN mkdir -p /app/state
 RUN chown -R apiuser:apiuser /app/state
-# Create screenshots directory for debugging
-RUN mkdir -p /app/screenshots
-RUN chown -R apiuser:apiuser /app/screenshots
 
 USER apiuser
 

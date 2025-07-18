@@ -236,8 +236,7 @@ async def check_twitter_scraper_health() -> ServiceHealthCheck:
     """Check Twitter scraper login state and health"""
     start_time = time.time()
     
-    try:
-        # Check login status
+    try:        # Check login status
         login_status = twitter_scraper.check_login_status()
         
         details = TwitterScraperHealthDetails(
@@ -245,24 +244,31 @@ async def check_twitter_scraper_health() -> ServiceHealthCheck:
             state_file_path=login_status.get("state_file_path", ""),
             state_file_size=login_status.get("state_file_size", 0),
             cookies_count=login_status.get("cookies_count", 0),
+            valid_cookies_count=login_status.get("valid_cookies_count", 0),
             login_required=login_status.get("login_required", True),
+            session_valid=login_status.get("session_valid", False),
             has_credentials=login_status.get("has_credentials", False),
             last_login_check=datetime.now(),
             error=login_status.get("error")
         )
         
         response_time = (time.time() - start_time) * 1000
-        
-        # Determine health status
+          # Determine health status with improved logic
         if login_status.get("error"):
             health_status = HealthStatus.UNHEALTHY
             message = f"Twitter scraper error: {login_status.get('error')}"
-        elif login_status.get("login_required"):
+        elif login_status.get("session_valid", False):
+            health_status = HealthStatus.HEALTHY
+            message = "Twitter scraper is authenticated and ready"
+        elif login_status.get("state_file_exists", False) and login_status.get("cookies_count", 0) > 0:
+            health_status = HealthStatus.DEGRADED
+            message = "Twitter session may be expired - authentication needed"
+        elif login_status.get("login_required", True):
             health_status = HealthStatus.DEGRADED
             message = "Twitter login required - scraper needs authentication"
         else:
-            health_status = HealthStatus.HEALTHY
-            message = "Twitter scraper is authenticated and ready"
+            health_status = HealthStatus.UNKNOWN
+            message = "Unable to determine Twitter scraper status"
         
         return ServiceHealthCheck(
             service_name="twitter_scraper",

@@ -13,6 +13,7 @@ from app.api.endpoints import auth as auth_router
 from app.api.endpoints import tasks as tasks_router
 from app.api.endpoints import scraping as scraping_router
 from app.api.endpoints import osint as osint_router
+from app.api.endpoints import health as health_router
 from app.db.session import engine
 from app.db.base import Base
 
@@ -145,6 +146,12 @@ app.include_router(
     osint_router.router,
     prefix="/api/v1/osint/twitter",
     tags=["osint"]
+)
+
+app.include_router(
+    health_router.router,
+    prefix=f"{settings.api_v1_str}/health",
+    tags=["health"]
 )
 
 

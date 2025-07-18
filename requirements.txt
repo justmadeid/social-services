@@ -20,3 +20,4 @@ requests
 python-dotenv
 structlog
 prometheus-client
+psutil

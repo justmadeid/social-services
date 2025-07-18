@@ -363,6 +363,7 @@ class TwitterScraper:
                                         "private": legacy.get('legacy', {}).get('protected', False),
                                         "verified": legacy.get('is_blue_verified', False),
                                         "avatar": legacy.get('avatar', {}).get('image_url', ''),
+                                        "profile_banner": legacy.get('legacy', {}).get('profile_banner_url', ''),
                                         "created": legacy.get('core', {}).get('created_at', ''),
                                     })
                                 except (KeyError, TypeError):

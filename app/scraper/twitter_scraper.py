@@ -688,7 +688,7 @@ class TwitterScraper:
                                         if 'entities' in legacy and 'media' in legacy['entities'] and legacy['entities']['media']:
                                             media = legacy['entities']['media'][0]
                                             if media['type'] == 'video':
-                                                mediainf = media.get('video_info', {}).get('variants', [{}])[0].get('url', '')
+                                                mediainf = media.get('video_info', {}).get('variants', [{}])[1].get('url', '')
                                             elif media['type'] == 'photo':
                                                 mediainf = media.get('media_url_https', '')
 

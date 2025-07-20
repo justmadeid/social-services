@@ -40,10 +40,21 @@ app = FastAPI(
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
+    allow_origins=[
+        "http://localhost:3000",  # React default
+        "http://localhost:3001",  # Alternative React port
+        "http://localhost:8080",  # Vue.js default
+        "http://localhost:8081",  # Alternative Vue port
+        "http://localhost:4200",  # Angular default
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:4200",
+        "*"  # Fallback for development
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
 )
 
 app.add_middleware(

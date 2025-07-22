@@ -670,6 +670,7 @@ class TwitterScraper:
                                         view = tweet_data.get('views', {})
                                         core = tweet_data['core']['user_results']['result']['legacy']
                                         co = tweet_data['core']['user_results']['result']['core']
+                                        av = tweet_data['core']['user_results']['result']['avatar']
 
                                         hashtags = re.findall(r'#(\w+)', legacy['full_text'])
                                         mentions = re.findall(r'@(\w+)', legacy['full_text'])
@@ -721,6 +722,7 @@ class TwitterScraper:
                                             "tweets": legacy.get('full_text', ''),
                                             "screen_name": co.get('screen_name', ''),
                                             "name": co.get('name', ''),
+                                            "profile_image_url": av.get('image_url', ''),
                                             "retweet": legacy.get('retweet_count', 0),
                                             "replies": legacy.get('reply_count', 0),
                                             "link_media": mediainf,
